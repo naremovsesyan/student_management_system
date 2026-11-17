@@ -16,6 +16,7 @@ int addStudent(Student student);
 Student *findStudent(int id);
 int updateStudent(int oldID, Student updatedStudent);
 float calculateAverage(const Student *student);
+int deleteStudent(int id);
 
 // Get student information
 int getStudentCount(void);

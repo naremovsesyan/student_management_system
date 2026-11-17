@@ -1,8 +1,21 @@
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
 #include "mongoose.h"
 #include "student.h"
+
+// Allow your GitHub Pages website to access the API.
+// Change this origin if your GitHub username is different.
+#define CORS_HEADERS \
+    "Access-Control-Allow-Origin: https://naremovesyan.github.io\r\n" \
+    "Access-Control-Allow-Methods: GET, OPTIONS\r\n" \
+    "Access-Control-Allow-Headers: Content-Type\r\n"
+
+#define JSON_HEADERS \
+    "Content-Type: application/json\r\n" \
+    CORS_HEADERS
 
 // Safely append text to a JSON buffer
 static int appendText(char *buffer, size_t capacity,
@@ -62,9 +75,14 @@ static void sendStudents(struct mg_connection *c) {
     char json[32768] = "";
     char item[256];
     size_t used = 0;
+    int written = 0;
 
-    appendText(json, sizeof(json), &used,
-               "{\"status\":1,\"students\":[");
+    if (!appendText(json, sizeof(json), &used,
+                    "{\"status\":1,\"students\":[")) {
+        mg_http_reply(c, 500, JSON_HEADERS,
+                      "{\"status\":0,\"message\":\"JSON error\"}\n");
+        return;
+    }
 
     int count = getStudentCount();
 
@@ -76,9 +94,10 @@ static void sendStudents(struct mg_connection *c) {
             continue;
         }
 
-        if (i > 0) {
+        if (written > 0) {
             if (!appendText(json, sizeof(json), &used, ",")) {
-                mg_http_reply(c, 500, "", "JSON buffer full\n");
+                mg_http_reply(c, 500, JSON_HEADERS,
+                              "{\"status\":0,\"message\":\"JSON buffer full\"}\n");
                 return;
             }
         }
@@ -97,20 +116,21 @@ static void sendStudents(struct mg_connection *c) {
                               student->name) ||
             !appendText(json, sizeof(json), &used, "}")) {
 
-            mg_http_reply(c, 500, "", "JSON buffer full\n");
+            mg_http_reply(c, 500, JSON_HEADERS,
+                          "{\"status\":0,\"message\":\"JSON buffer full\"}\n");
             return;
         }
+
+        written++;
     }
 
-    appendText(json, sizeof(json), &used, "]}");
+    if (!appendText(json, sizeof(json), &used, "]}")) {
+        mg_http_reply(c, 500, JSON_HEADERS,
+                      "{\"status\":0,\"message\":\"JSON buffer full\"}\n");
+        return;
+    }
 
-    mg_http_reply(
-        c,
-        200,
-        "Content-Type: application/json\r\n",
-        "%s\n",
-        json
-    );
+    mg_http_reply(c, 200, JSON_HEADERS, "%s\n", json);
 }
 
 // Handle HTTP requests
@@ -124,13 +144,19 @@ static void eventHandler(struct mg_connection *c,
     struct mg_http_message *hm =
         (struct mg_http_message *) ev_data;
 
+    // Handle CORS preflight requests
+    if (mg_strcasecmp(hm->method, mg_str("OPTIONS")) == 0) {
+        mg_http_reply(c, 204, CORS_HEADERS, "");
+        return;
+    }
+
     // Test endpoint
     if (mg_match(hm->uri, mg_str("/api/hello"), NULL)) {
 
         mg_http_reply(
             c,
             200,
-            "Content-Type: application/json\r\n",
+            JSON_HEADERS,
             "{\"status\":1,\"message\":\"C backend is running\"}\n"
         );
     }
@@ -138,17 +164,23 @@ static void eventHandler(struct mg_connection *c,
     // Students endpoint
     else if (mg_match(hm->uri, mg_str("/api/students"), NULL)) {
 
+        if (mg_strcasecmp(hm->method, mg_str("GET")) != 0) {
+            mg_http_reply(c, 405, JSON_HEADERS,
+                          "{\"status\":0,\"message\":\"Method not allowed\"}\n");
+            return;
+        }
+
         sendStudents(c);
     }
 
-    // Serve website files
+    // Unknown endpoint
     else {
-
-        struct mg_http_serve_opts opts = {
-            .root_dir = "."
-        };
-
-        mg_http_serve_dir(c, hm, &opts);
+        mg_http_reply(
+            c,
+            404,
+            JSON_HEADERS,
+            "{\"status\":0,\"message\":\"Not found\"}\n"
+        );
     }
 }
 
@@ -166,14 +198,34 @@ int main(void) {
     addStudent(student1);
     addStudent(student2);
 
+    // Read the port provided by Render
+    const char *port_env = getenv("PORT");
+    int port = 10000;
+
+    if (port_env != NULL) {
+        char *end;
+        long value = strtol(port_env, &end, 10);
+
+        if (*end != '\0' || value < 1 || value > 65535) {
+            printf("Invalid PORT value\n");
+            return 1;
+        }
+
+        port = (int) value;
+    }
+
     // Initialize HTTP server
     struct mg_mgr mgr;
+    char listen_url[64];
 
     mg_mgr_init(&mgr);
 
+    snprintf(listen_url, sizeof(listen_url),
+             "http://0.0.0.0:%d", port);
+
     struct mg_connection *server = mg_http_listen(
         &mgr,
-        "http://127.0.0.1:8000",
+        listen_url,
         eventHandler,
         NULL
     );
@@ -185,8 +237,8 @@ int main(void) {
     }
 
     printf("Student Management System server started!\n");
-    printf("Website: http://localhost:8000\n");
-    printf("API: http://localhost:8000/api/students\n");
+    printf("Listening on port %d\n", port);
+    printf("API: /api/students\n");
 
     // Keep server running
     for (;;) {

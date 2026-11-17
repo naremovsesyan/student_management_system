@@ -290,13 +290,19 @@
                             <p>Enter the student's information.</p>
                         </div>
 
-                        <button
-                            class="close-btn"
-                            id="closeModal"
-                            type="button"
-                        >
-                            &times;
-                        </button>
+                      <td class="action-buttons">
+    <button
+        class="edit-btn"
+        onclick="editStudent(${student.id})">
+        Edit
+    </button>
+
+    <button
+        class="delete-btn"
+        onclick="deleteStudent(${student.id})">
+        Delete
+    </button>
+</td>
 
                     </div>
 

@@ -1,0 +1,407 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Management System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- ======================================
+             SIDEBAR
+        ======================================= -->
+
+        <aside class="sidebar">
+
+            <div class="logo">
+                <div class="logo-icon">S</div>
+                <span>StudentHub</span>
+            </div>
+
+            <p class="nav-title">MENU</p>
+
+            <nav>
+                <a href="#dashboard" class="nav-link active">
+                    Dashboard
+                </a>
+
+                <a href="#students" class="nav-link">
+                    Students
+                </a>
+
+                <a href="#analytics" class="nav-link">
+                    Analytics
+                </a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <p>Student Management System</p>
+                <small>Version 1.0</small>
+            </div>
+
+        </aside>
+
+
+        <!-- ======================================
+             MAIN CONTENT
+        ======================================= -->
+
+        <main class="main-content">
+
+
+            <!-- ==================================
+                 1. DASHBOARD PAGE
+            =================================== -->
+
+            <section class="page-section" id="dashboard">
+
+                <header class="topbar">
+
+                    <div>
+                        <h1>Dashboard</h1>
+                        <p>Welcome to your student management system.</p>
+                    </div>
+
+                    <div class="profile">
+                        <div class="avatar">A</div>
+                        <span>Administrator</span>
+                    </div>
+
+                </header>
+
+
+                <!-- Statistics -->
+
+                <section class="stats">
+
+                    <div class="stat-card">
+                        <p>Total Students</p>
+                        <h2 id="totalStudents">0</h2>
+                        <span>Registered students</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <p>Average Grade</p>
+                        <h2 id="averageGrade">0.00</h2>
+                        <span>Overall performance</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <p>Top Student</p>
+                        <h2 id="topStudent">--</h2>
+                        <span>Highest average grade</span>
+                    </div>
+
+                </section>
+
+            </section>
+
+
+            <!-- ==================================
+                 2. STUDENTS PAGE
+            =================================== -->
+
+            <section
+                class="students-section page-section"
+                id="students"
+                hidden
+            >
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>Students</h2>
+                        <p>Manage your registered students.</p>
+                    </div>
+
+                    <button class="add-btn" id="openModal">
+                        + Add Student
+                    </button>
+
+                </div>
+
+
+                <!-- Search -->
+
+                <div class="table-controls">
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search by name or ID..."
+                    >
+
+                </div>
+
+
+                <!-- Students Table -->
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student Name</th>
+                                <th>Age</th>
+                                <th>Math</th>
+                                <th>English</th>
+                                <th>Physics</th>
+                                <th>Average</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="studentTable">
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <p id="emptyMessage" class="empty-message">
+                    No students found.
+                </p>
+
+            </section>
+
+
+            <!-- ==================================
+                 3. ANALYTICS PAGE
+            =================================== -->
+
+            <section
+                class="analytics-section page-section"
+                id="analytics"
+                hidden
+            >
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>Academic Analytics</h2>
+                        <p>Understand student academic performance.</p>
+                    </div>
+
+                </div>
+
+
+                <!-- Subject Average Cards -->
+
+                <div class="analytics-grid">
+
+                    <div class="analytics-card">
+                        <h3>Math Average</h3>
+                        <h2 id="mathAverage">0.00</h2>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h3>English Average</h3>
+                        <h2 id="englishAverage">0.00</h2>
+                    </div>
+
+                    <div class="analytics-card">
+                        <h3>Physics Average</h3>
+                        <h2 id="physicsAverage">0.00</h2>
+                    </div>
+
+                </div>
+
+
+                <!-- Subject Performance -->
+
+                <div class="analytics-card performance-card">
+
+                    <h3>Subject Performance</h3>
+
+                    <div class="performance-row">
+
+                        <span>Math</span>
+
+                        <div class="progress">
+                            <div
+                                id="mathBar"
+                                class="progress-fill"
+                            ></div>
+                        </div>
+
+                        <span id="mathPercent">0%</span>
+
+                    </div>
+
+
+                    <div class="performance-row">
+
+                        <span>English</span>
+
+                        <div class="progress">
+                            <div
+                                id="englishBar"
+                                class="progress-fill"
+                            ></div>
+                        </div>
+
+                        <span id="englishPercent">0%</span>
+
+                    </div>
+
+
+                    <div class="performance-row">
+
+                        <span>Physics</span>
+
+                        <div class="progress">
+                            <div
+                                id="physicsBar"
+                                class="progress-fill"
+                            ></div>
+                        </div>
+
+                        <span id="physicsPercent">0%</span>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==================================
+                 4. ADD / EDIT STUDENT MODAL
+            =================================== -->
+
+            <div class="modal" id="studentModal">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+
+                        <div>
+                            <h2>Add Student</h2>
+                            <p>Enter the student's information.</p>
+                        </div>
+
+                        <button
+                            class="close-btn"
+                            id="closeModal"
+                            type="button"
+                        >
+                            &times;
+                        </button>
+
+                    </div>
+
+
+                    <form id="studentForm">
+
+                        <label for="studentID">
+                            Student ID
+                        </label>
+
+                        <input
+                            type="number"
+                            id="studentID"
+                            min="1"
+                            required
+                        >
+
+
+                        <label for="studentName">
+                            Full Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="studentName"
+                            maxlength="49"
+                            required
+                        >
+
+
+                        <label for="studentAge">
+                            Age
+                        </label>
+
+                        <input
+                            type="number"
+                            id="studentAge"
+                            min="1"
+                            max="120"
+                            required
+                        >
+
+
+                        <div class="grade-grid">
+
+                            <div>
+                                <label for="math">Math</label>
+
+                                <input
+                                    type="number"
+                                    id="math"
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                    required
+                                >
+                            </div>
+
+                            <div>
+                                <label for="english">English</label>
+
+                                <input
+                                    type="number"
+                                    id="english"
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                    required
+                                >
+                            </div>
+
+                            <div>
+                                <label for="physics">Physics</label>
+
+                                <input
+                                    type="number"
+                                    id="physics"
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                    required
+                                >
+                            </div>
+
+                        </div>
+
+
+                        <button type="submit" id="submitButton">
+                            Add Student
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <!-- JavaScript -->
+
+    <script src="app.js"></script>
+
+</body>
+</html>

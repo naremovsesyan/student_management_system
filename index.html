@@ -15,9 +15,7 @@
 
     <div class="app">
 
-        <!-- ======================================
-             SIDEBAR
-        ======================================= -->
+        <!-- SIDEBAR -->
 
         <aside class="sidebar">
 
@@ -50,16 +48,12 @@
         </aside>
 
 
-        <!-- ======================================
-             MAIN CONTENT
-        ======================================= -->
+        <!-- MAIN CONTENT -->
 
         <main class="main-content">
 
 
-            <!-- ==================================
-                 1. DASHBOARD PAGE
-            =================================== -->
+            <!-- 1. DASHBOARD -->
 
             <section class="page-section" id="dashboard">
 
@@ -77,8 +71,6 @@
 
                 </header>
 
-
-                <!-- Statistics -->
 
                 <section class="stats">
 
@@ -105,9 +97,7 @@
             </section>
 
 
-            <!-- ==================================
-                 2. STUDENTS PAGE
-            =================================== -->
+            <!-- 2. STUDENTS -->
 
             <section
                 class="students-section page-section"
@@ -129,8 +119,6 @@
                 </div>
 
 
-                <!-- Search -->
-
                 <div class="table-controls">
 
                     <input
@@ -141,8 +129,6 @@
 
                 </div>
 
-
-                <!-- Students Table -->
 
                 <div class="table-container">
 
@@ -161,8 +147,7 @@
                             </tr>
                         </thead>
 
-                        <tbody id="studentTable">
-                        </tbody>
+                        <tbody id="studentTable"></tbody>
 
                     </table>
 
@@ -175,9 +160,7 @@
             </section>
 
 
-            <!-- ==================================
-                 3. ANALYTICS PAGE
-            =================================== -->
+            <!-- 3. ANALYTICS -->
 
             <section
                 class="analytics-section page-section"
@@ -194,8 +177,6 @@
 
                 </div>
 
-
-                <!-- Subject Average Cards -->
 
                 <div class="analytics-grid">
 
@@ -217,11 +198,10 @@
                 </div>
 
 
-                <!-- Subject Performance -->
-
                 <div class="analytics-card performance-card">
 
                     <h3>Subject Performance</h3>
+
 
                     <div class="performance-row">
 
@@ -275,9 +255,7 @@
             </section>
 
 
-            <!-- ==================================
-                 4. ADD / EDIT STUDENT MODAL
-            =================================== -->
+            <!-- 4. ADD / EDIT STUDENT MODAL -->
 
             <div class="modal" id="studentModal">
 
@@ -290,19 +268,13 @@
                             <p>Enter the student's information.</p>
                         </div>
 
-                      <td class="action-buttons">
-    <button
-        class="edit-btn"
-        onclick="editStudent(${student.id})">
-        Edit
-    </button>
-
-    <button
-        class="delete-btn"
-        onclick="deleteStudent(${student.id})">
-        Delete
-    </button>
-</td>
+                        <button
+                            type="button"
+                            id="closeModal"
+                            class="close-btn"
+                        >
+                            &times;
+                        </button>
 
                     </div>
 
@@ -405,7 +377,7 @@
     </div>
 
 
-    <!-- JavaScript -->
+    <!-- JAVASCRIPT -->
 
     <script src="app.js"></script>
 

@@ -214,7 +214,7 @@ static int readStudent(
     struct mg_http_message *hm,
     Student *student
 ) {
-    char name[50];
+    char name[50] = "";
 
     double id = mg_json_get_num(hm->body, "$.id");
     double age = mg_json_get_num(hm->body, "$.age");
@@ -253,7 +253,12 @@ static int readStudent(
     student->id = (int) id;
     student->age = (int) age;
 
-    snprintf(student->name, sizeof(student->name), "%s", name);
+    snprintf(
+        student->name,
+        sizeof(student->name),
+        "%s",
+        name
+    );
 
     student->grades[0] = (float) math;
     student->grades[1] = (float) english;
@@ -264,7 +269,7 @@ static int readStudent(
 
 
 // ==========================================
-// 7. GET ID FROM QUERY
+// 7. GET STUDENT ID FROM QUERY
 // ==========================================
 
 static int readStudentID(
@@ -280,7 +285,7 @@ static int readStudentID(
         sizeof(idBuffer)
     );
 
-    if (length <= 0) {
+    if (length <= 0 || length >= (int) sizeof(idBuffer)) {
         return 0;
     }
 
@@ -437,20 +442,28 @@ static void eventHandler(
 
     if (mg_match(hm->uri, mg_str("/api/students"), NULL)) {
 
+        // GET: Get all students
+
         if (mg_strcasecmp(hm->method, mg_str("GET")) == 0) {
             sendStudents(c);
             return;
         }
+
+        // POST: Add a student
 
         if (mg_strcasecmp(hm->method, mg_str("POST")) == 0) {
             handleAddStudent(c, hm);
             return;
         }
 
+        // PUT: Update a student
+
         if (mg_strcasecmp(hm->method, mg_str("PUT")) == 0) {
             handleUpdateStudent(c, hm);
             return;
         }
+
+        // DELETE: Remove a student
 
         if (mg_strcasecmp(hm->method, mg_str("DELETE")) == 0) {
             handleDeleteStudent(c, hm);

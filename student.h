@@ -11,14 +11,16 @@ typedef struct {
     float grades[3];
 } Student;
 
-// Student management functions
+// Student management
 int addStudent(Student student);
 Student *findStudent(int id);
 int updateStudent(int oldID, Student updatedStudent);
-float calculateAverage(const Student *student);
 int deleteStudent(int id);
 
-// Get student information
+// Calculations
+float calculateAverage(const Student *student);
+
+// Student information
 int getStudentCount(void);
 Student *getStudentAt(int index);
 

@@ -1,6 +1,6 @@
 
 // ==========================================
-// 1. STUDENT DATA
+// 1. STUDENT DATA & API
 // ==========================================
 
 let students = [];
@@ -8,6 +8,7 @@ let editingStudentID = null;
 
 const API_URL =
     "https://student-management-system-4smk.onrender.com/api";
+
 
 // ==========================================
 // 2. DOM ELEMENTS
@@ -22,83 +23,177 @@ const closeModalButton = document.getElementById("closeModal");
 
 
 // ==========================================
-// 3. LOAD STUDENTS FROM C BACKEND
+// 3. API HELPER
+// ==========================================
+
+async function apiRequest(endpoint, method = "GET", body = null) {
+
+    const options = {
+        method,
+        headers: {
+            "Content-Type": "application/json"
+        }
+    };
+
+    if (body !== null) {
+        options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(`${API_URL}${endpoint}`, options);
+
+    const data = await response.json();
+
+    if (!response.ok || data.status !== 1) {
+        throw new Error(data.message || `Request failed: ${response.status}`);
+    }
+
+    return data;
+}
+
+
+// ==========================================
+// 4. LOAD STUDENTS FROM C BACKEND
 // ==========================================
 
 async function loadStudents() {
+
     try {
-        const response = await fetch(`${API_URL}/students`);
-        if (!response.ok) {
-            throw new Error("Failed to load students");
-        }
 
-        const data = await response.json();
+        const data = await apiRequest("/students");
 
-        if (data.status !== 1 || !Array.isArray(data.students)) {
-            throw new Error("Invalid student data");
+        if (!Array.isArray(data.students)) {
+            throw new Error("Invalid student data received from server.");
         }
 
         students = data.students;
 
-        displayStudents();
-        updateDashboard();
-        updateAnalytics();
+        refreshApplication();
 
-        console.log("Students loaded from C backend:", students);
+        console.log("Students loaded:", students);
 
     } catch (error) {
-        console.error("Error loading students:", error);
 
-        alert("Cannot connect to C backend. Make sure the server is running.");
+        console.error("Loading students failed:", error);
+
+        alert("Cannot load students: " + error.message);
     }
 }
 
 
 // ==========================================
-// 4. CALCULATE STUDENT AVERAGE
+// 5. REFRESH APPLICATION
 // ==========================================
 
-function calculateAverage(student) {
-    return student.grades.reduce((sum, grade) => sum + grade, 0)
-        / student.grades.length;
+function refreshApplication() {
+
+    displayStudents();
+    updateDashboard();
+    updateAnalytics();
 }
 
 
 // ==========================================
-// 5. DISPLAY STUDENTS
+// 6. CALCULATE STUDENT AVERAGE
+// ==========================================
+
+function calculateAverage(student) {
+
+    if (!Array.isArray(student.grades) || student.grades.length === 0) {
+        return 0;
+    }
+
+    const total = student.grades.reduce(
+        (sum, grade) => sum + Number(grade),
+        0
+    );
+
+    return total / student.grades.length;
+}
+
+
+// ==========================================
+// 7. ESCAPE HTML
+// ==========================================
+
+function escapeHTML(value) {
+
+    return String(value).replace(/[&<>"']/g, character => ({
+
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+
+    })[character]);
+}
+
+
+// ==========================================
+// 8. DISPLAY STUDENTS
 // ==========================================
 
 function displayStudents(list = students) {
+
     const table = document.getElementById("studentTable");
     const emptyMessage = document.getElementById("emptyMessage");
+
+    if (!table) {
+        console.error("HTML element #studentTable not found!");
+        return;
+    }
 
     table.innerHTML = "";
 
     if (list.length === 0) {
-        emptyMessage.style.display = "block";
+
+        if (emptyMessage) {
+            emptyMessage.style.display = "block";
+        }
+
         return;
     }
 
-    emptyMessage.style.display = "none";
+    if (emptyMessage) {
+        emptyMessage.style.display = "none";
+    }
 
     list.forEach(student => {
+
+        const grades = student.grades || [0, 0, 0];
         const average = calculateAverage(student);
 
         const row = document.createElement("tr");
 
         row.innerHTML = `
             <td>${student.id}</td>
+
             <td>${escapeHTML(student.name)}</td>
+
             <td>${student.age}</td>
-            <td>${student.grades[0].toFixed(2)}</td>
-            <td>${student.grades[1].toFixed(2)}</td>
-            <td>${student.grades[2].toFixed(2)}</td>
+
+            <td>${Number(grades[0]).toFixed(2)}</td>
+
+            <td>${Number(grades[1]).toFixed(2)}</td>
+
+            <td>${Number(grades[2]).toFixed(2)}</td>
+
             <td>${average.toFixed(2)}</td>
-            <td>
-                <button class="edit-btn"
+
+            <td class="action-buttons">
+
+                <button
+                    class="edit-btn"
                     onclick="editStudent(${student.id})">
                     Edit
                 </button>
+
+                <button
+                    class="delete-btn"
+                    onclick="deleteStudent(${student.id})">
+                    Delete
+                </button>
+
             </td>
         `;
 
@@ -107,28 +202,28 @@ function displayStudents(list = students) {
 }
 
 
-// Escape names before inserting them into HTML
-function escapeHTML(value) {
-    return String(value).replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-    })[character]);
-}
-
-
 // ==========================================
-// 6. UPDATE DASHBOARD
+// 9. UPDATE DASHBOARD
 // ==========================================
 
 function updateDashboard() {
-    document.getElementById("totalStudents").textContent = students.length;
+
+    const totalElement = document.getElementById("totalStudents");
+    const averageElement = document.getElementById("averageGrade");
+    const topElement = document.getElementById("topStudent");
+
+    if (!totalElement || !averageElement || !topElement) {
+        console.error("Dashboard HTML elements are missing!");
+        return;
+    }
+
+    totalElement.textContent = students.length;
 
     if (students.length === 0) {
-        document.getElementById("averageGrade").textContent = "0.00";
-        document.getElementById("topStudent").textContent = "N/A";
+
+        averageElement.textContent = "0.00";
+        topElement.textContent = "N/A";
+
         return;
     }
 
@@ -136,6 +231,7 @@ function updateDashboard() {
     let topStudent = students[0];
 
     students.forEach(student => {
+
         const average = calculateAverage(student);
 
         total += average;
@@ -145,25 +241,38 @@ function updateDashboard() {
         }
     });
 
-    document.getElementById("averageGrade").textContent =
+    averageElement.textContent =
         (total / students.length).toFixed(2);
 
-    document.getElementById("topStudent").textContent = topStudent.name;
+    topElement.textContent = topStudent.name;
 }
 
 
 // ==========================================
-// 7. UPDATE ANALYTICS
+// 10. UPDATE ANALYTICS
 // ==========================================
 
 function updateAnalytics() {
+
     const subjects = ["math", "english", "physics"];
 
     if (students.length === 0) {
+
         subjects.forEach(subject => {
-            document.getElementById(subject + "Average").textContent = "0.00";
-            document.getElementById(subject + "Bar").style.width = "0%";
-            document.getElementById(subject + "Percent").textContent = "0%";
+
+            const averageElement =
+                document.getElementById(subject + "Average");
+
+            const barElement =
+                document.getElementById(subject + "Bar");
+
+            const percentElement =
+                document.getElementById(subject + "Percent");
+
+            if (averageElement) averageElement.textContent = "0.00";
+            if (barElement) barElement.style.width = "0%";
+            if (percentElement) percentElement.textContent = "0%";
+
         });
 
         return;
@@ -172,88 +281,140 @@ function updateAnalytics() {
     const totals = [0, 0, 0];
 
     students.forEach(student => {
+
         student.grades.forEach((grade, index) => {
-            totals[index] += grade;
+
+            if (index < 3) {
+                totals[index] += Number(grade);
+            }
+
         });
     });
 
     subjects.forEach((subject, index) => {
+
         const average = totals[index] / students.length;
-        const percentage = average * 10;
+        const percentage = (average / 10) * 100;
 
-        document.getElementById(subject + "Average").textContent =
-            average.toFixed(2);
+        const averageElement =
+            document.getElementById(subject + "Average");
 
-        document.getElementById(subject + "Bar").style.width =
-            percentage + "%";
+        const barElement =
+            document.getElementById(subject + "Bar");
 
-        document.getElementById(subject + "Percent").textContent =
-            percentage.toFixed(0) + "%";
+        const percentElement =
+            document.getElementById(subject + "Percent");
+
+        if (averageElement) {
+            averageElement.textContent = average.toFixed(2);
+        }
+
+        if (barElement) {
+            barElement.style.width = percentage + "%";
+        }
+
+        if (percentElement) {
+            percentElement.textContent =
+                percentage.toFixed(0) + "%";
+        }
+
     });
 }
 
 
 // ==========================================
-// 8. SEARCH STUDENTS
+// 11. SEARCH STUDENTS
 // ==========================================
 
-document.getElementById("searchInput").addEventListener("input", function() {
-    const searchValue = this.value.toLowerCase();
+const searchInput = document.getElementById("searchInput");
 
-    const filteredStudents = students.filter(student =>
-        student.name.toLowerCase().includes(searchValue) ||
-        student.id.toString().includes(searchValue)
-    );
+if (searchInput) {
 
-    displayStudents(filteredStudents);
-});
+    searchInput.addEventListener("input", function() {
 
+        const searchValue = this.value.toLowerCase();
 
-// ==========================================
-// 9. OPEN AND CLOSE MODAL
-// ==========================================
+        const filteredStudents = students.filter(student =>
 
-openModalButton.addEventListener("click", function() {
-    editingStudentID = null;
-    studentForm.reset();
+            student.name.toLowerCase().includes(searchValue) ||
 
-    submitButton.textContent = "Add Student";
-    studentModal.style.display = "flex";
-});
+            student.id.toString().includes(searchValue)
 
-closeModalButton.addEventListener("click", function() {
-    studentModal.style.display = "none";
-});
+        );
+
+        displayStudents(filteredStudents);
+
+    });
+}
 
 
 // ==========================================
-// 10. EDIT STUDENT
+// 12. OPEN AND CLOSE MODAL
+// ==========================================
+
+if (openModalButton) {
+
+    openModalButton.addEventListener("click", function() {
+
+        editingStudentID = null;
+
+        studentForm.reset();
+
+        submitButton.textContent = "Add Student";
+
+        studentModal.style.display = "flex";
+
+    });
+}
+
+
+if (closeModalButton) {
+
+    closeModalButton.addEventListener("click", function() {
+
+        studentModal.style.display = "none";
+
+    });
+}
+
+
+// ==========================================
+// 13. EDIT STUDENT
 // ==========================================
 
 function editStudent(id) {
+
     const student = students.find(s => s.id === id);
 
     if (!student) {
+
         alert("Student not found!");
+
         return;
     }
 
     document.getElementById("studentID").value = student.id;
+
     document.getElementById("studentName").value = student.name;
+
     document.getElementById("studentAge").value = student.age;
 
     document.getElementById("math").value = student.grades[0];
+
     document.getElementById("english").value = student.grades[1];
+
     document.getElementById("physics").value = student.grades[2];
 
     editingStudentID = id;
 
     submitButton.textContent = "Save Changes";
+
     studentModal.style.display = "flex";
 }
 
+
 // ==========================================
-// DELETE STUDENT
+// 14. DELETE STUDENT
 // ==========================================
 
 async function deleteStudent(id) {
@@ -261,37 +422,24 @@ async function deleteStudent(id) {
     const student = students.find(s => s.id === id);
 
     if (!student) {
+
         alert("Student not found!");
+
         return;
     }
 
-    // Ask for confirmation
     const confirmed = confirm(
         `Are you sure you want to delete ${student.name}?`
     );
 
-    if (!confirmed) {
-        return;
-    }
+    if (!confirmed) return;
 
     try {
 
-        const response = await fetch(
-            `${API_BASE_URL}/students?id=${id}`,
-            {
-                method: "DELETE"
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || data.status !== 1) {
-            throw new Error(data.message || "Could not delete student");
-        }
+        await apiRequest(`/students?id=${id}`, "DELETE");
 
         alert("Student deleted successfully!");
 
-        // Reload data from C backend
         await loadStudents();
 
     } catch (error) {
@@ -302,113 +450,195 @@ async function deleteStudent(id) {
     }
 }
 
+
 // ==========================================
-// 11. ADD AND EDIT STUDENT
+// 15. ADD AND EDIT STUDENT
 // ==========================================
 
-studentForm.addEventListener("submit", function(event) {
-    event.preventDefault();
+if (studentForm) {
 
-    const id = Number(document.getElementById("studentID").value);
-    const name = document.getElementById("studentName").value.trim();
-    const age = Number(document.getElementById("studentAge").value);
+    studentForm.addEventListener("submit", async function(event) {
 
-    const math = Number(document.getElementById("math").value);
-    const english = Number(document.getElementById("english").value);
-    const physics = Number(document.getElementById("physics").value);
+        event.preventDefault();
 
-    if (
-        !Number.isInteger(id) || id < 1 ||
-        name === "" ||
-        !Number.isInteger(age) || age < 1 || age > 120 ||
-        ![math, english, physics].every(
-            grade => Number.isFinite(grade) && grade >= 0 && grade <= 10
-        )
-    ) {
-        alert("Please enter valid student information!");
-        return;
-    }
-
-    const duplicateID = students.some(student =>
-        student.id === id && student.id !== editingStudentID
-    );
-
-    if (duplicateID) {
-        alert("Student ID already exists!");
-        return;
-    }
-
-    if (editingStudentID !== null) {
-        const student = students.find(
-            student => student.id === editingStudentID
+        const id = Number(
+            document.getElementById("studentID").value
         );
 
-        if (!student) {
-            alert("Student not found!");
+        const name =
+            document.getElementById("studentName").value.trim();
+
+        const age = Number(
+            document.getElementById("studentAge").value
+        );
+
+        const math = Number(
+            document.getElementById("math").value
+        );
+
+        const english = Number(
+            document.getElementById("english").value
+        );
+
+        const physics = Number(
+            document.getElementById("physics").value
+        );
+
+
+        // Validate information
+
+        if (
+            !Number.isInteger(id) || id < 1 ||
+            name === "" ||
+            !Number.isInteger(age) || age < 1 || age > 120 ||
+            ![math, english, physics].every(
+                grade =>
+                    Number.isFinite(grade) &&
+                    grade >= 0 &&
+                    grade <= 10
+            )
+        ) {
+
+            alert("Please enter valid student information!");
+
             return;
         }
 
-        student.id = id;
-        student.name = name;
-        student.age = age;
-        student.grades = [math, english, physics];
 
-        alert("Student updated locally!");
+        // Check duplicate ID
 
-    } else {
-        if (students.length >= 100) {
-            alert("Maximum number of students reached!");
+        const duplicateID = students.some(student =>
+
+            student.id === id &&
+            student.id !== editingStudentID
+
+        );
+
+        if (duplicateID) {
+
+            alert("Student ID already exists!");
+
             return;
         }
 
-        students.push({
+
+        // Prepare student data
+
+        const studentData = {
+
             id,
             name,
             age,
+
             grades: [math, english, physics]
-        });
 
-        alert("Student added locally!");
-    }
-
-    editingStudentID = null;
-
-    displayStudents();
-    updateDashboard();
-    updateAnalytics();
-
-    studentForm.reset();
-    submitButton.textContent = "Add Student";
-    studentModal.style.display = "none";
-});
+        };
 
 
-const navigationLinks = document.querySelectorAll(".nav-link");
+        try {
 
-const pageSections = document.querySelectorAll(".page-section");
+            submitButton.disabled = true;
+
+            submitButton.textContent = "Saving...";
+
+
+            if (editingStudentID !== null) {
+
+                // UPDATE STUDENT
+
+                await apiRequest(
+                    `/students?id=${editingStudentID}`,
+                    "PUT",
+                    studentData
+                );
+
+                alert("Student updated successfully!");
+
+            } else {
+
+                // ADD STUDENT
+
+                await apiRequest(
+                    "/students",
+                    "POST",
+                    studentData
+                );
+
+                alert("Student added successfully!");
+
+            }
+
+
+            editingStudentID = null;
+
+            studentForm.reset();
+
+            studentModal.style.display = "none";
+
+            await loadStudents();
+
+        } catch (error) {
+
+            console.error("Save error:", error);
+
+            alert(error.message);
+
+        } finally {
+
+            submitButton.disabled = false;
+
+            submitButton.textContent = "Add Student";
+
+        }
+
+    });
+}
+
+
+// ==========================================
+// 16. NAVIGATION
+// ==========================================
+
+const navigationLinks =
+    document.querySelectorAll(".nav-link");
+
+const pageSections =
+    document.querySelectorAll(".page-section");
+
 
 function showPage(pageID) {
 
     pageSections.forEach(section => {
+
         section.hidden = true;
+
     });
 
-    const selectedPage = document.getElementById(pageID);
+    const selectedPage =
+        document.getElementById(pageID);
 
     if (!selectedPage) {
+
         console.error("Page not found:", pageID);
+
         return;
     }
 
     selectedPage.hidden = false;
 
     navigationLinks.forEach(link => {
+
         link.classList.toggle(
+
             "active",
+
             link.getAttribute("href") === "#" + pageID
+
         );
+
     });
 }
+
 
 navigationLinks.forEach(link => {
 
@@ -416,20 +646,25 @@ navigationLinks.forEach(link => {
 
         event.preventDefault();
 
-        const pageID = this.getAttribute("href").substring(1);
+        const pageID =
+            this.getAttribute("href").substring(1);
 
         showPage(pageID);
 
         history.replaceState(null, "", "#" + pageID);
+
     });
 
 });
 
-showPage("dashboard");
-
 
 // ==========================================
-// 13. INITIALIZE APPLICATION
+// 17. INITIALIZE APPLICATION
 // ==========================================
+
+const initialPage =
+    window.location.hash.substring(1) || "dashboard";
+
+showPage(initialPage);
 
 loadStudents();

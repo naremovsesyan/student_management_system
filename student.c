@@ -1,13 +1,19 @@
 
 #include <stdio.h>
 #include <string.h>
+
 #include "student.h"
 
 static Student students[MAX_STUDENTS];
 static int studentCount = 0;
 
-// Add a student
+
+// ==========================================
+// ADD STUDENT
+// ==========================================
+
 int addStudent(Student student) {
+
     if (studentCount >= MAX_STUDENTS) {
         return 0;
     }
@@ -22,9 +28,15 @@ int addStudent(Student student) {
     return 1;
 }
 
-// Find a student by ID
+
+// ==========================================
+// FIND STUDENT
+// ==========================================
+
 Student *findStudent(int id) {
+
     for (int i = 0; i < studentCount; i++) {
+
         if (students[i].id == id) {
             return &students[i];
         }
@@ -33,8 +45,13 @@ Student *findStudent(int id) {
     return NULL;
 }
 
-// Update a student
+
+// ==========================================
+// UPDATE STUDENT
+// ==========================================
+
 int updateStudent(int oldID, Student updatedStudent) {
+
     Student *student = findStudent(oldID);
 
     if (student == NULL) {
@@ -52,39 +69,17 @@ int updateStudent(int oldID, Student updatedStudent) {
     return 1;
 }
 
-// Calculate average grade
-float calculateAverage(const Student *student) {
-    float total = 0;
 
-    for (int i = 0; i < 3; i++) {
-        total += student->grades[i];
-    }
+// ==========================================
+// DELETE STUDENT
+// ==========================================
 
-    return total / 3;
-}
-
-// Get total number of students
-int getStudentCount(void) {
-    return studentCount;
-}
-
-// Get student by position
-Student *getStudentAt(int index) {
-    if (index < 0 || index >= studentCount) {
-        return NULL;
-    }
-
-    return &students[index];
-}
-
-// Delete a student by ID
 int deleteStudent(int id) {
 
     for (int i = 0; i < studentCount; i++) {
 
         if (students[i].id == id) {
 
-            // Move remaining students one position left
             for (int j = i; j < studentCount - 1; j++) {
                 students[j] = students[j + 1];
             }
@@ -96,4 +91,47 @@ int deleteStudent(int id) {
     }
 
     return 0;
+}
+
+
+// ==========================================
+// CALCULATE AVERAGE
+// ==========================================
+
+float calculateAverage(const Student *student) {
+
+    if (student == NULL) {
+        return 0;
+    }
+
+    float total = 0;
+
+    for (int i = 0; i < 3; i++) {
+        total += student->grades[i];
+    }
+
+    return total / 3.0f;
+}
+
+
+// ==========================================
+// GET STUDENT COUNT
+// ==========================================
+
+int getStudentCount(void) {
+    return studentCount;
+}
+
+
+// ==========================================
+// GET STUDENT BY INDEX
+// ==========================================
+
+Student *getStudentAt(int index) {
+
+    if (index < 0 || index >= studentCount) {
+        return NULL;
+    }
+
+    return &students[index];
 }

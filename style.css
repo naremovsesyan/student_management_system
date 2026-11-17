@@ -20,6 +20,7 @@ body {
 
 .sidebar {
     width: 245px;
+    flex-shrink: 0;
     background: #172B4D;
     color: white;
     padding: 28px 20px;
@@ -78,12 +79,12 @@ nav {
     line-height: 1.8;
 }
 
-/* Main content */
+/* Main Content */
 
 .main-content {
     flex: 1;
-    padding: 35px;
     min-width: 0;
+    padding: 35px;
 }
 
 .topbar {
@@ -123,6 +124,16 @@ nav {
     font-weight: bold;
 }
 
+/* Page Navigation */
+
+.page-section {
+    width: 100%;
+}
+
+.page-section[hidden] {
+    display: none !important;
+}
+
 /* Statistics */
 
 .stats {
@@ -154,7 +165,7 @@ nav {
     font-size: 12px;
 }
 
-/* Students section */
+/* Students Section */
 
 .students-section {
     background: white;
@@ -246,145 +257,51 @@ tbody tr:hover {
     padding: 25px;
 }
 
-/* Modal */
+/* Action Buttons */
 
-.modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15, 30, 50, 0.55);
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    z-index: 10;
-}
-
-.modal.show {
+.action-buttons {
     display: flex;
+    gap: 8px;
 }
 
-.modal-content {
-    background: white;
-    width: 100%;
-    max-width: 500px;
-    padding: 28px;
-    border-radius: 14px;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 25px;
-}
-
-.modal-header h2 {
-    margin-bottom: 7px;
-}
-
-.modal-header p {
-    color: #8492A6;
-    font-size: 13px;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 27px;
+.edit-btn {
+    background-color: #EAF1FF;
+    color: #3978E8;
+    border: 1px solid #D5E3FF;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    height: 30px;
+    transition: all 0.2s ease;
 }
 
-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.edit-btn:hover {
+    background-color: #3978E8;
+    color: white;
+    border-color: #3978E8;
+    transform: translateY(-1px);
 }
 
-form label {
-    font-size: 13px;
-    font-weight: bold;
-    margin-top: 7px;
+.edit-btn:active {
+    transform: translateY(0);
 }
 
-form input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #DCE3EC;
-    border-radius: 7px;
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 7px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-.grade-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+.delete-btn:hover {
+    background: #b02a37;
 }
 
-.submit-btn {
-    margin-top: 18px;
-}
-
-/* Mobile */
-
-@media (max-width: 850px) {
-
-    .sidebar {
-        width: 190px;
-    }
-
-    .main-content {
-        padding: 22px;
-    }
-
-    .stats {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 600px) {
-
-    .sidebar {
-        width: 65px;
-        padding: 20px 8px;
-    }
-
-    .logo {
-        justify-content: center;
-    }
-
-    .logo span,
-    .nav-title,
-    .nav-link,
-    .sidebar-bottom {
-        display: none;
-    }
-
-    .main-content {
-        padding: 15px;
-    }
-
-    .topbar {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .profile {
-        display: none;
-    }
-
-    .section-header {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .grade-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-
-/* Analytics section */
+/* Analytics Section */
 
 .analytics-section {
     background: white;
@@ -448,42 +365,88 @@ form input {
     transition: width 0.4s ease;
 }
 
-/* Responsive analytics */
+/* Modal */
 
-@media (max-width: 850px) {
-    .analytics-grid {
-        grid-template-columns: 1fr;
-    }
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 30, 50, 0.55);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 10;
 }
 
+.modal.show {
+    display: flex;
+}
 
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    padding: 28px;
+    border-radius: 14px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
 
-/* Edit Button */
-.edit-btn {
-    background-color: #EAF1FF;
-    color: #3978E8;
-    border: 1px solid #D5E3FF;
-    padding: 7px 14px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 25px;
+}
+
+.modal-header h2 {
+    margin-bottom: 7px;
+}
+
+.modal-header p {
+    color: #8492A6;
+    font-size: 13px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 27px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    height: 30px;
 }
 
-.edit-btn:hover {
-    background-color: #3978E8;
-    color: white;
-    border-color: #3978E8;
-    transform: translateY(-1px);
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.edit-btn:active {
-    transform: translateY(0);
+form label {
+    font-size: 13px;
+    font-weight: bold;
+    margin-top: 7px;
 }
 
+form input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #DCE3EC;
+    border-radius: 7px;
+}
+
+.grade-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.submit-btn {
+    margin-top: 18px;
+}
 
 /* Save Changes Button */
+
 #submitButton {
     background-color: #3978E8;
     color: #FFFFFF;
@@ -511,37 +474,85 @@ form input {
     outline-offset: 3px;
 }
 
+/* Responsive: Tablet */
 
-/* ==========================================
-   FIX PAGE NAVIGATION DISPLAY
-========================================== */
+@media (max-width: 850px) {
+    .sidebar {
+        width: 190px;
+    }
 
-.page-section[hidden] {
-    display: none !important;
+    .main-content {
+        padding: 22px;
+    }
+
+    .stats,
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
-#dashboard:not([hidden]),
-#students:not([hidden]),
-#analytics:not([hidden]) {
-    display: block !important;
-}
+/* Responsive: Mobile */
 
+@media (max-width: 600px) {
+    .app {
+        flex-direction: column;
+    }
 
-.action-buttons {
-    display: flex;
-    gap: 8px;
-}
+    .sidebar {
+        width: 100%;
+        padding: 12px 15px;
+    }
 
-.delete-btn {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 7px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.2s;
-}
+    .logo {
+        margin-bottom: 15px;
+    }
 
-.delete-btn:hover {
-    background: #b02a37;
+    .nav-title,
+    .sidebar-bottom {
+        display: none;
+    }
+
+    nav {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .nav-link {
+        display: block;
+        padding: 9px 11px;
+        font-size: 12px;
+    }
+
+    .main-content {
+        padding: 15px;
+    }
+
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .profile {
+        display: none;
+    }
+
+    .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .grade-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .students-section,
+    .analytics-section {
+        padding: 18px;
+    }
+
+    .performance-row {
+        grid-template-columns: 65px 1fr 40px;
+        gap: 8px;
+    }
 }

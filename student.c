@@ -76,3 +76,24 @@ Student *getStudentAt(int index) {
 
     return &students[index];
 }
+
+// Delete a student by ID
+int deleteStudent(int id) {
+
+    for (int i = 0; i < studentCount; i++) {
+
+        if (students[i].id == id) {
+
+            // Move remaining students one position left
+            for (int j = i; j < studentCount - 1; j++) {
+                students[j] = students[j + 1];
+            }
+
+            studentCount--;
+
+            return 1;
+        }
+    }
+
+    return 0;
+}

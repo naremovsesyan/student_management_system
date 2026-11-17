@@ -252,6 +252,55 @@ function editStudent(id) {
     studentModal.style.display = "flex";
 }
 
+// ==========================================
+// DELETE STUDENT
+// ==========================================
+
+async function deleteStudent(id) {
+
+    const student = students.find(s => s.id === id);
+
+    if (!student) {
+        alert("Student not found!");
+        return;
+    }
+
+    // Ask for confirmation
+    const confirmed = confirm(
+        `Are you sure you want to delete ${student.name}?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_BASE_URL}/students?id=${id}`,
+            {
+                method: "DELETE"
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || data.status !== 1) {
+            throw new Error(data.message || "Could not delete student");
+        }
+
+        alert("Student deleted successfully!");
+
+        // Reload data from C backend
+        await loadStudents();
+
+    } catch (error) {
+
+        console.error("Delete error:", error);
+
+        alert(error.message);
+    }
+}
 
 // ==========================================
 // 11. ADD AND EDIT STUDENT

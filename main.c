@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 
 #include "mongoose.h"
 #include "student.h"
@@ -141,15 +142,12 @@ static void sendStudents(struct mg_connection *c) {
     size_t used = 0;
     int written = 0;
 
-    if (!appendText(
+    appendText(
         json,
         sizeof(json),
         &used,
         "{\"status\":1,\"students\":["
-    )) {
-        sendError(c, 500, "JSON error");
-        return;
-    }
+    );
 
     int count = getStudentCount();
 
@@ -209,12 +207,69 @@ static void sendStudents(struct mg_connection *c) {
 
 
 // ==========================================
-// 6. DELETE STUDENT
+// 6. READ STUDENT JSON
 // ==========================================
 
-static void handleDeleteStudent(
-    struct mg_connection *c,
-    struct mg_http_message *hm
+static int readStudent(
+    struct mg_http_message *hm,
+    Student *student
+) {
+    char name[50];
+
+    double id = mg_json_get_num(hm->body, "$.id");
+    double age = mg_json_get_num(hm->body, "$.age");
+
+    double math = mg_json_get_num(hm->body, "$.grades[0]");
+    double english = mg_json_get_num(hm->body, "$.grades[1]");
+    double physics = mg_json_get_num(hm->body, "$.grades[2]");
+
+    size_t nameLength = mg_json_get_str(
+        hm->body,
+        "$.name",
+        name,
+        sizeof(name)
+    );
+
+    if (
+        nameLength == 0 ||
+        name[0] == '\0' ||
+        strlen(name) >= sizeof(student->name) ||
+        !isfinite(id) ||
+        !isfinite(age) ||
+        !isfinite(math) ||
+        !isfinite(english) ||
+        !isfinite(physics) ||
+        id < 1 || id > INT_MAX ||
+        floor(id) != id ||
+        age < 1 || age > 120 ||
+        floor(age) != age ||
+        math < 0 || math > 10 ||
+        english < 0 || english > 10 ||
+        physics < 0 || physics > 10
+    ) {
+        return 0;
+    }
+
+    student->id = (int) id;
+    student->age = (int) age;
+
+    snprintf(student->name, sizeof(student->name), "%s", name);
+
+    student->grades[0] = (float) math;
+    student->grades[1] = (float) english;
+    student->grades[2] = (float) physics;
+
+    return 1;
+}
+
+
+// ==========================================
+// 7. GET ID FROM QUERY
+// ==========================================
+
+static int readStudentID(
+    struct mg_http_message *hm,
+    int *id
 ) {
     char idBuffer[32];
 
@@ -226,24 +281,103 @@ static void handleDeleteStudent(
     );
 
     if (length <= 0) {
-        sendError(c, 400, "Student ID is required");
-        return;
+        return 0;
     }
 
     char *end;
-    long id = strtol(idBuffer, &end, 10);
+    long value = strtol(idBuffer, &end, 10);
 
     if (
         end == idBuffer ||
         *end != '\0' ||
-        id < 1 ||
-        id > INT_MAX
+        value < 1 ||
+        value > INT_MAX
     ) {
-        sendError(c, 400, "Invalid student ID");
+        return 0;
+    }
+
+    *id = (int) value;
+
+    return 1;
+}
+
+
+// ==========================================
+// 8. ADD STUDENT
+// ==========================================
+
+static void handleAddStudent(
+    struct mg_connection *c,
+    struct mg_http_message *hm
+) {
+    Student student = {0};
+
+    if (!readStudent(hm, &student)) {
+        sendError(c, 400, "Invalid student information");
         return;
     }
 
-    if (!deleteStudent((int) id)) {
+    if (!addStudent(student)) {
+        sendError(c, 409, "Student ID already exists or limit reached");
+        return;
+    }
+
+    sendSuccess(c, "Student added successfully");
+}
+
+
+// ==========================================
+// 9. UPDATE STUDENT
+// ==========================================
+
+static void handleUpdateStudent(
+    struct mg_connection *c,
+    struct mg_http_message *hm
+) {
+    int oldID;
+
+    if (!readStudentID(hm, &oldID)) {
+        sendError(c, 400, "Valid student ID is required");
+        return;
+    }
+
+    Student student = {0};
+
+    if (!readStudent(hm, &student)) {
+        sendError(c, 400, "Invalid student information");
+        return;
+    }
+
+    if (findStudent(oldID) == NULL) {
+        sendError(c, 404, "Student not found");
+        return;
+    }
+
+    if (!updateStudent(oldID, student)) {
+        sendError(c, 409, "Student ID already exists");
+        return;
+    }
+
+    sendSuccess(c, "Student updated successfully");
+}
+
+
+// ==========================================
+// 10. DELETE STUDENT
+// ==========================================
+
+static void handleDeleteStudent(
+    struct mg_connection *c,
+    struct mg_http_message *hm
+) {
+    int id;
+
+    if (!readStudentID(hm, &id)) {
+        sendError(c, 400, "Valid student ID is required");
+        return;
+    }
+
+    if (!deleteStudent(id)) {
         sendError(c, 404, "Student not found");
         return;
     }
@@ -253,7 +387,7 @@ static void handleDeleteStudent(
 
 
 // ==========================================
-// 7. HTTP EVENT HANDLER
+// 11. HTTP EVENT HANDLER
 // ==========================================
 
 static void eventHandler(
@@ -269,11 +403,9 @@ static void eventHandler(
         (struct mg_http_message *) ev_data;
 
 
-    // CORS preflight
+    // CORS PREFLIGHT
 
-    if (
-        mg_strcasecmp(hm->method, mg_str("OPTIONS")) == 0
-    ) {
+    if (mg_strcasecmp(hm->method, mg_str("OPTIONS")) == 0) {
         mg_http_reply(c, 204, CORS_HEADERS, "");
         return;
     }
@@ -283,9 +415,8 @@ static void eventHandler(
 
     if (mg_match(hm->uri, mg_str("/api/hello"), NULL)) {
 
-        if (
-            mg_strcasecmp(hm->method, mg_str("GET")) == 0
-        ) {
+        if (mg_strcasecmp(hm->method, mg_str("GET")) == 0) {
+
             mg_http_reply(
                 c,
                 200,
@@ -293,8 +424,8 @@ static void eventHandler(
                 "{\"status\":1,"
                 "\"message\":\"C backend is running\"}\n"
             );
-        }
-        else {
+
+        } else {
             sendError(c, 405, "Method not allowed");
         }
 
@@ -306,28 +437,25 @@ static void eventHandler(
 
     if (mg_match(hm->uri, mg_str("/api/students"), NULL)) {
 
-        // GET
-
-        if (
-            mg_strcasecmp(hm->method, mg_str("GET")) == 0
-        ) {
+        if (mg_strcasecmp(hm->method, mg_str("GET")) == 0) {
             sendStudents(c);
             return;
         }
 
-
-        // DELETE
-
-        if (
-            mg_strcasecmp(hm->method, mg_str("DELETE")) == 0
-        ) {
-            handleDeleteStudent(c, hm);
+        if (mg_strcasecmp(hm->method, mg_str("POST")) == 0) {
+            handleAddStudent(c, hm);
             return;
         }
 
+        if (mg_strcasecmp(hm->method, mg_str("PUT")) == 0) {
+            handleUpdateStudent(c, hm);
+            return;
+        }
 
-        // POST and PUT are not implemented in this version.
-        // Add them when connecting your student management functions.
+        if (mg_strcasecmp(hm->method, mg_str("DELETE")) == 0) {
+            handleDeleteStudent(c, hm);
+            return;
+        }
 
         sendError(c, 405, "Method not allowed");
         return;
@@ -341,12 +469,12 @@ static void eventHandler(
 
 
 // ==========================================
-// 8. MAIN FUNCTION
+// 12. MAIN FUNCTION
 // ==========================================
 
 int main(void) {
 
-    // Sample students
+    // INITIAL SAMPLE STUDENTS
 
     Student student1 = {
         101, "Anna Smith", 16, {9, 10, 8}
@@ -360,9 +488,10 @@ int main(void) {
     addStudent(student2);
 
 
-    // Render port
+    // RENDER PORT
 
     const char *port_env = getenv("PORT");
+
     int port = 10000;
 
     if (port_env != NULL) {
@@ -371,6 +500,7 @@ int main(void) {
         long value = strtol(port_env, &end, 10);
 
         if (
+            end == port_env ||
             *end != '\0' ||
             value < 1 ||
             value > 65535
@@ -383,9 +513,10 @@ int main(void) {
     }
 
 
-    // Initialize server
+    // INITIALIZE SERVER
 
     struct mg_mgr mgr;
+
     char listen_url[64];
 
     mg_mgr_init(&mgr);
@@ -398,7 +529,7 @@ int main(void) {
     );
 
 
-    // Start HTTP server
+    // START HTTP SERVER
 
     struct mg_connection *server = mg_http_listen(
         &mgr,
@@ -420,12 +551,13 @@ int main(void) {
     printf("Student Management System started!\n");
     printf("Listening on port %d\n", port);
 
-    printf("GET    /api/hello\n");
     printf("GET    /api/students\n");
+    printf("POST   /api/students\n");
+    printf("PUT    /api/students?id=ID\n");
     printf("DELETE /api/students?id=ID\n");
 
 
-    // Keep server running
+    // KEEP SERVER RUNNING
 
     for (;;) {
         mg_mgr_poll(&mgr, 1000);

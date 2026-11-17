@@ -2,16 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <limits.h>
 #include "mongoose.h"
 #include "student.h"
+
 
 // Allow your GitHub Pages website to access the API.
 // Change this origin if your GitHub username is different.
 #define CORS_HEADERS \
     "Access-Control-Allow-Origin: https://naremovsesyan.github.io\r\n" \
-    "Access-Control-Allow-Methods: GET, OPTIONS\r\n" \
-    "Access-Control-Allow-Headers: Content-Type\r\n"
+    "Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS\r\n" \
+    "Access-Control-Allow-Headers: Content-Type\r\n" \
+    "Vary: Origin\r\n"
 
 #define JSON_HEADERS \
     "Content-Type: application/json\r\n" \
@@ -248,4 +250,43 @@ int main(void) {
     mg_mgr_free(&mgr);
 
     return 0;
+}
+
+
+// DELETE: Remove a student
+if (mg_strcasecmp(hm->method, mg_str("DELETE")) == 0) {
+
+    char idBuffer[32];
+
+    int length = mg_http_get_var(
+        hm->query,
+        "id",
+        idBuffer,
+        sizeof(idBuffer)
+    );
+
+    if (length <= 0) {
+        sendError(c, 400, "Student ID is required");
+        return;
+    }
+
+    char *end;
+    long id = strtol(idBuffer, &end, 10);
+
+    if (
+        *end != '\0' ||
+        id < 1 ||
+        id > INT_MAX
+    ) {
+        sendError(c, 400, "Invalid student ID");
+        return;
+    }
+
+    if (!deleteStudent((int) id)) {
+        sendError(c, 404, "Student not found");
+        return;
+    }
+
+    sendSuccess(c, "Student deleted successfully");
+    return;
 }

@@ -6,6 +6,8 @@
 let students = [];
 let editingStudentID = null;
 
+const API_URL =
+    "https://student-management-system-4smk.onrender.com/api";
 
 // ==========================================
 // 2. DOM ELEMENTS
@@ -25,8 +27,7 @@ const closeModalButton = document.getElementById("closeModal");
 
 async function loadStudents() {
     try {
-        const response = await fetch("/api/students");
-
+        const response = await fetch(`${API_URL}/students`);
         if (!response.ok) {
             throw new Error("Failed to load students");
         }

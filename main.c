@@ -9,7 +9,7 @@
 // Allow your GitHub Pages website to access the API.
 // Change this origin if your GitHub username is different.
 #define CORS_HEADERS \
-    "Access-Control-Allow-Origin: https://naremovesyan.github.io\r\n" \
+    "Access-Control-Allow-Origin: https://naremovsesyan.github.io\r\n" \
     "Access-Control-Allow-Methods: GET, OPTIONS\r\n" \
     "Access-Control-Allow-Headers: Content-Type\r\n"
 
